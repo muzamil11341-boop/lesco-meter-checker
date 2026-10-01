@@ -45,8 +45,19 @@ if check_password():
 
     with col2:
         st.title("⚡ LESCO Meter Reading Verification Tool")
-        st.caption(
-            "**Developed & Maintained by:** Mian Muzamil (Mustafabad Sub Divn LESCO)"
+
+        # COLORFUL AND BOLD NAME HIGHLIGHT
+        st.markdown(
+            """
+            <div style="font-size: 16px; margin-top: -10px; margin-bottom: 15px;">
+                <span style="color: #555555; font-weight: 500;">Developed & Maintained by:</span> 
+                <span style="color: #008055; font-weight: bold; font-size: 18px; background-color: #e8f5e9; padding: 3px 8px; border-radius: 5px;">
+                    Mian Muzamil
+                </span> 
+                <span style="color: #0056b3; font-weight: 600;">(Mustafabad Sub Divn LESCO)</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
     st.markdown("---")
@@ -54,7 +65,9 @@ if check_password():
     # --- SIDEBAR SESSION INFO ---
     with st.sidebar:
         st.write("### 👤 User Information")
-        st.info("**Officer:** Mian Muzamil\n\n**Sub Division:** Mustafabad")
+        st.info(
+            "**Officer:** **Mian Muzamil**\n\n**Sub Division:** Mustafabad"
+        )
         st.markdown("---")
         if st.button("Logout", type="primary"):
             st.session_state["authenticated"] = False
@@ -76,39 +89,31 @@ if check_password():
         for idx, line in enumerate(lines, 1):
             line_str = line.strip()
 
-            # Record length check (At least 39 characters)
+            # Record length check
             if len(line_str) >= 39:
-                # Slicing Logic:
+                # Slicing Logic
                 batch = line_str[5:7]  # Batch (2 digits)
                 sub_div = line_str[8:13]  # Sub Div (5 digits)
                 acc_no = line_str[13:20]  # Account No (7 digits)
 
                 ref_no = batch + sub_div + acc_no  # Exact 14-digit Ref No
-
                 units_part = line_str[29:39]  # Current Month Units Position
 
-                # Extract Meter Reader Name accurately from line end
-                # 1. Pehle dekhein ke line ke end me alphabetic name hai ya nahi
-                match = re.search(r"([A-Za-z\s\.\'-]+)$", line_str)
-                if match:
-                    extracted_name = match.group(1).strip()
-                    # Agar extracted string me zeroes/numbers ke baad text hai
-                    extracted_name = re.sub(
-                        r"^[0-9\.\*\s]+", "", extracted_name
-                    ).strip()
-                else:
-                    extracted_name = ""
+                # METER READER NAME EXTRACTION (Robust Method)
+                # Pure line me se aakhri digits/dots/symbols ke baad ka alphabetic text nikalna
+                name_matches = re.findall(r"[A-Za-z]+(?:\s+[A-Za-z]+)*", line_str)
 
-                # Fallback check agar regex miss kare
-                if not extracted_name or len(extracted_name) < 2:
-                    # Line ke aakhri 20 characters se numbers aur symbols saaf karein
-                    tail = line_str[-25:]
-                    cleaned_tail = re.sub(r"[0-9\*\.]", "", tail).strip()
-                    reader_name = (
-                        cleaned_tail if len(cleaned_tail) >= 2 else "N/A"
-                    )
+                # Filter out system tags like 'M11' or single letters if reader name is longer
+                valid_names = [
+                    nm
+                    for nm in name_matches
+                    if len(nm) > 1 and nm not in ["M11", "DAT", "TXT"]
+                ]
+
+                if valid_names:
+                    reader_name = valid_names[-1]  # Line ka sab se aakhri naam
                 else:
-                    reader_name = extracted_name
+                    reader_name = "N/A"
 
                 try:
                     units_val = int(units_part)
