@@ -32,17 +32,35 @@ def check_password():
 
 
 if check_password():
-    st.title("⚡ LESCO Meter Reading Verification Tool")
-    st.write(
-        "Meter reading text file upload karke 0 units / same reading wale reference numbers filter karein."
-    )
+    # --- HEADER & BRANDING SECTION ---
+    col1, col2 = st.columns([1, 5])
 
+    with col1:
+        # LESCO Logo Image
+        st.image(
+            "https://upload.wikimedia.org/wikipedia/commons/f/f8/LESCO_Logo.png",
+            width=110,
+        )
+
+    with col2:
+        st.title("⚡ LESCO Meter Reading Verification Tool")
+        st.caption(
+            "**Developed & Maintained by:** Mian Muzamil (Mustafabad Sub Divn LESCO)"
+        )
+
+    st.markdown("---")
+
+    # --- SIDEBAR SESSION INFO ---
     with st.sidebar:
-        st.write("### User Session")
-        if st.button("Logout"):
+        st.write("### 👤 User Information")
+        st.info("**Officer:** Mian Muzamil\n\n**Sub Division:** Mustafabad")
+        st.markdown("---")
+        if st.button("Logout", type="primary"):
             st.session_state["authenticated"] = False
             st.rerun()
 
+    # --- FILE UPLOAD SECTION ---
+    st.subheader("📂 File Upload")
     uploaded_file = st.file_uploader(
         "Apni Meter Reading File Upload Karein (.txt, .dat)",
         type=["txt", "dat"],
@@ -59,43 +77,42 @@ if check_password():
 
             # Record length check (At least 39 characters)
             if len(line_str) >= 39:
-                # Layout Slicing:
-                # Index 0..5: Serial No (e.g. 00075)
-                # Index 5..7: Batch (e.g. 14)
-                # Index 7..8: Extra Zero (Skipped)
-                # Index 8..13: Sub Div (e.g. 11341)
-                # Index 13..20: Account No (7 digits e.g. 1177800)
-                batch = line_str[5:7]
-                sub_div = line_str[8:13]
-                acc_no = line_str[13:20]
+                # Slicing Logic:
+                batch = line_str[5:7]  # Batch (2 digits)
+                sub_div = line_str[8:13]  # Sub Div (5 digits)
+                acc_no = line_str[13:20]  # Account No (7 digits)
 
-                ref_no = batch + sub_div + acc_no  # Exact 14 Digits Ref No
+                ref_no = batch + sub_div + acc_no  # Exact 14-digit Ref No
 
-                # Units Position: Index 29 to 39
-                units_part = line_str[29:39]
+                units_part = line_str[29:39]  # Current Month Units Position
+
+                # Line ke end se Meter Reader ka Name/Info extract kar rahe hain
+                reader_name = line_str[39:].strip() if len(line_str) > 39 else "N/A"
 
                 try:
                     units_val = int(units_part)
                     if units_val == 0:
                         zero_records.append(
                             {
-                                "Line No": idx,
                                 "Batch": batch,
                                 "Sub Div": sub_div,
                                 "Reference Number": ref_no,
                                 "Status": "0 Units / Same Reading",
+                                "Meter Reader": reader_name if reader_name else "N/A",
                             }
                         )
                 except ValueError:
                     pass
 
+        st.markdown("---")
         if zero_records:
             df = pd.DataFrame(zero_records)
+
             st.error(
-                f"⚠️ Total {len(zero_records)} Zero-Reading / Same Reading Records Found!"
+                f"⚠️ **Total {len(zero_records)} Zero-Reading / Same Reading Records Found!**"
             )
 
-            # Display Table
+            # Display Clean Table with Meter Reader Column
             st.dataframe(df, use_container_width=True)
 
             # CSV Download Button
@@ -107,4 +124,4 @@ if check_password():
                 mime="text/csv",
             )
         else:
-            st.success("✅ Koi bhi 0 unit / same reading record nahi mila.")
+            st.success("✅ **Koi bhi 0 unit / same reading record nahi mila.**")
