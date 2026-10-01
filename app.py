@@ -44,7 +44,8 @@ if check_password():
             st.rerun()
 
     uploaded_file = st.file_uploader(
-        "Apni Meter Reading File Upload Karein (.txt)", type=["txt", "dat"]
+        "Apni Meter Reading File Upload Karein (.txt, .dat)",
+        type=["txt", "dat"],
     )
 
     if uploaded_file is not None:
@@ -58,13 +59,11 @@ if check_password():
 
             # Record length check (At least 29 characters)
             if len(line_str) >= 29:
-                # 14 Digit Reference Number Logic:
-                # Batch (2 digits) + SubDiv (5 digits) + Account No (7 digits)
-                batch = line_str[0:2]  # e.g., '14', '01'
-                sub_div = line_str[2:7]  # e.g., '11341'
-                acc_no = line_str[7:14]  # Next 7 digits
-
-                ref_no = batch + sub_div + acc_no  # Combined 14 Digits Ref No
+                # First 5 characters (0..5) are Serial Number (e.g., 00001)
+                # Reference Number starts from Index 5 to 19 (14 Digits)
+                ref_no = line_str[5:19]  # Exact 14-digit Ref No e.g., 14113411741010
+                batch = line_str[5:7]  # e.g., '14'
+                sub_div = line_str[7:12]  # e.g., '11341'
 
                 units_part = line_str[19:29]  # Units position
 
@@ -89,7 +88,7 @@ if check_password():
                 f"⚠️ Total {len(zero_records)} Zero-Reading / Same Reading Records Found!"
             )
 
-            # Display Table with Batch & SubDiv columns
+            # Display Table
             st.dataframe(df, use_container_width=True)
 
             # CSV Download Button
