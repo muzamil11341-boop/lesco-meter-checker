@@ -1,3 +1,4 @@
+import re
 import pandas as pd
 import streamlit as st
 
@@ -86,8 +87,12 @@ if check_password():
 
                 units_part = line_str[29:39]  # Current Month Units Position
 
-                # Line ke end se Meter Reader ka Name/Info extract kar rahe hain
-                reader_name = line_str[39:].strip() if len(line_str) > 39 else "N/A"
+                # Extract only meter reader name from end of line
+                match = re.search(r"([A-Za-z\s]+)$", line_str)
+                if match:
+                    reader_name = match.group(1).strip()
+                else:
+                    reader_name = "N/A"
 
                 try:
                     units_val = int(units_part)
@@ -98,7 +103,7 @@ if check_password():
                                 "Sub Div": sub_div,
                                 "Reference Number": ref_no,
                                 "Status": "0 Units / Same Reading",
-                                "Meter Reader": reader_name if reader_name else "N/A",
+                                "Meter Reader": reader_name,
                             }
                         )
                 except ValueError:
@@ -112,7 +117,7 @@ if check_password():
                 f"⚠️ **Total {len(zero_records)} Zero-Reading / Same Reading Records Found!**"
             )
 
-            # Display Clean Table with Meter Reader Column
+            # Display Clean Table with Only Meter Reader Name
             st.dataframe(df, use_container_width=True)
 
             # CSV Download Button
