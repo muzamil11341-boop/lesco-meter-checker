@@ -8,7 +8,7 @@ st.set_page_config(
 )
 
 # --- PASSWORD CONFIGURATION ---
-CORRECT_PASSWORD = "LESCO"  # Password set to LESCO
+CORRECT_PASSWORD = "LESCO"
 
 
 def check_password():
@@ -31,14 +31,12 @@ def check_password():
     return True
 
 
-# Password check hone ke baad hi baki app dikhega
 if check_password():
     st.title("⚡ LESCO Meter Reading Verification Tool")
     st.write(
         "Meter reading text file upload karke 0 units / same reading wale reference numbers filter karein."
     )
 
-    # Sidebar me logout button
     with st.sidebar:
         st.write("### User Session")
         if st.button("Logout"):
@@ -58,9 +56,16 @@ if check_password():
         for idx, line in enumerate(lines, 1):
             line_str = line.strip()
 
-            # Record processing (14 Digit Ref No & Units check)
+            # Record length check (At least 29 characters)
             if len(line_str) >= 29:
-                ref_no = line_str[5:19]  # 14 Digit Reference Number
+                # 14 Digit Reference Number Logic:
+                # Batch (2 digits) + SubDiv (5 digits) + Account No (7 digits)
+                batch = line_str[0:2]  # e.g., '14', '01'
+                sub_div = line_str[2:7]  # e.g., '11341'
+                acc_no = line_str[7:14]  # Next 7 digits
+
+                ref_no = batch + sub_div + acc_no  # Combined 14 Digits Ref No
+
                 units_part = line_str[19:29]  # Units position
 
                 try:
@@ -69,6 +74,8 @@ if check_password():
                         zero_records.append(
                             {
                                 "Line No": idx,
+                                "Batch": batch,
+                                "Sub Div": sub_div,
                                 "Reference Number": ref_no,
                                 "Status": "0 Units / Same Reading",
                             }
@@ -82,7 +89,7 @@ if check_password():
                 f"⚠️ Total {len(zero_records)} Zero-Reading / Same Reading Records Found!"
             )
 
-            # Display Table
+            # Display Table with Batch & SubDiv columns
             st.dataframe(df, use_container_width=True)
 
             # CSV Download Button
