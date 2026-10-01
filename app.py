@@ -87,12 +87,28 @@ if check_password():
 
                 units_part = line_str[29:39]  # Current Month Units Position
 
-                # Extract only meter reader name from end of line
-                match = re.search(r"([A-Za-z\s]+)$", line_str)
+                # Extract Meter Reader Name accurately from line end
+                # 1. Pehle dekhein ke line ke end me alphabetic name hai ya nahi
+                match = re.search(r"([A-Za-z\s\.\'-]+)$", line_str)
                 if match:
-                    reader_name = match.group(1).strip()
+                    extracted_name = match.group(1).strip()
+                    # Agar extracted string me zeroes/numbers ke baad text hai
+                    extracted_name = re.sub(
+                        r"^[0-9\.\*\s]+", "", extracted_name
+                    ).strip()
                 else:
-                    reader_name = "N/A"
+                    extracted_name = ""
+
+                # Fallback check agar regex miss kare
+                if not extracted_name or len(extracted_name) < 2:
+                    # Line ke aakhri 20 characters se numbers aur symbols saaf karein
+                    tail = line_str[-25:]
+                    cleaned_tail = re.sub(r"[0-9\*\.]", "", tail).strip()
+                    reader_name = (
+                        cleaned_tail if len(cleaned_tail) >= 2 else "N/A"
+                    )
+                else:
+                    reader_name = extracted_name
 
                 try:
                     units_val = int(units_part)
@@ -117,7 +133,7 @@ if check_password():
                 f"⚠️ **Total {len(zero_records)} Zero-Reading / Same Reading Records Found!**"
             )
 
-            # Display Clean Table with Only Meter Reader Name
+            # Display Clean Table with Meter Reader Column
             st.dataframe(df, use_container_width=True)
 
             # CSV Download Button
