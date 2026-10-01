@@ -57,15 +57,22 @@ if check_password():
         for idx, line in enumerate(lines, 1):
             line_str = line.strip()
 
-            # Record length check (At least 29 characters)
-            if len(line_str) >= 29:
-                # First 5 characters (0..5) are Serial Number (e.g., 00001)
-                # Reference Number starts from Index 5 to 19 (14 Digits)
-                ref_no = line_str[5:19]  # Exact 14-digit Ref No e.g., 14113411741010
-                batch = line_str[5:7]  # e.g., '14'
-                sub_div = line_str[7:12]  # e.g., '11341'
+            # Record length check (At least 39 characters)
+            if len(line_str) >= 39:
+                # Layout Slicing:
+                # Index 0..5: Serial No (e.g. 00075)
+                # Index 5..7: Batch (e.g. 14)
+                # Index 7..8: Extra Zero (Skipped)
+                # Index 8..13: Sub Div (e.g. 11341)
+                # Index 13..20: Account No (7 digits e.g. 1177800)
+                batch = line_str[5:7]
+                sub_div = line_str[8:13]
+                acc_no = line_str[13:20]
 
-                units_part = line_str[19:29]  # Units position
+                ref_no = batch + sub_div + acc_no  # Exact 14 Digits Ref No
+
+                # Units Position: Index 29 to 39
+                units_part = line_str[29:39]
 
                 try:
                     units_val = int(units_part)
